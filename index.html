@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TubeTrust: Ethical Recommendation Prototype</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons for UI elements -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f0f0f;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Toggle Switch Animation */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6;
+        }
+
+        .toggle-checkbox:checked+.toggle-label {
+            background-color: #3b82f6;
+        }
+
+        /* Smooth fade for explanation cards */
+        .explanation-panel {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+
+<body class="bg-[#0f0f0f] text-white font-sans min-h-screen flex flex-col">
+
+    <!-- HEADER: Logo and The Central Toggle -->
+    <header
+        class="fixed top-0 w-full z-50 bg-[#0f0f0f]/95 backdrop-blur-sm border-b border-[#272727] h-16 flex items-center justify-between px-4 md:px-6">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-1 cursor-pointer" onclick="filterVideos('All')">
+                <i class="ph-fill ph-youtube-logo text-red-600 text-3xl"></i>
+                <span class="text-xl font-bold tracking-tight font-serif hidden sm:block">TubeTrust</span>
+            </div>
+        </div>
+
+        <!-- THE ARGUMENT: The Transparency Toggle -->
+        <div class="flex items-center gap-3 bg-[#272727] p-2 rounded-full border border-[#3f3f3f]">
+            <span class="text-xs font-medium text-gray-400 pl-2">Black Box</span>
+            <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                <input type="checkbox" name="toggle" id="transparency-toggle"
+                    class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-transform duration-300 ease-in-out transform translate-x-0 checked:translate-x-full z-10" />
+                <label for="transparency-toggle"
+                    class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer transition-colors duration-300"></label>
+            </div>
+            <span class="text-xs font-medium text-blue-400 pr-2">Glass Box</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <i class="ph ph-bell text-2xl text-white cursor-pointer hover:text-gray-300"></i>
+            <div
+                class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-sm font-bold cursor-pointer">
+                H</div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT: The Feed -->
+    <main class="flex-1 pt-20 px-4 md:px-8 pb-10 max-w-[1600px] mx-auto w-full">
+
+        <!-- Context Banner -->
+        <div id="mode-banner"
+            class="mb-6 p-4 rounded-lg bg-gray-800 border border-gray-700 text-sm text-gray-300 transition-all duration-300 hidden">
+            <div class="flex items-start gap-3">
+                <i class="ph-fill ph-info text-blue-400 text-xl mt-0.5"></i>
+                <div>
+                    <h3 class="font-bold text-white mb-1">Explain Mode Active</h3>
+                    <p>You are now viewing the <strong>Algorithmic Logic</strong> behind your feed. This layer reveals
+                        why specific content was selected for you, highlighting the balance between engagement
+                        prediction and diversity.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="flex gap-3 overflow-x-auto pb-4 mb-2 no-scrollbar" id="category-filters">
+            <button onclick="filterVideos('All')"
+                class="category-btn bg-white text-black px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+                data-category="All">All</button>
+            <button onclick="filterVideos('Gaming')"
+                class="category-btn bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+                data-category="Gaming">Gaming</button>
+            <button onclick="filterVideos('Politics')"
+                class="category-btn bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+                data-category="Politics">Politics</button>
+            <button onclick="filterVideos('Technology')"
+                class="category-btn bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+                data-category="Technology">Technology</button>
+            <button onclick="filterVideos('Recently Uploaded')"
+                class="category-btn bg-[#272727] hover:bg-[#3f3f3f] text-white px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+                data-category="Recently Uploaded">Recently Uploaded</button>
+        </div>
+
+        <!-- Video Grid -->
+        <div id="video-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-8 gap-x-4">
+            <!-- Videos will be injected here by JS -->
+        </div>
+
+    </main>
+
+    <!-- JAVASCRIPT: Logic and Data -->
+    <script>
+        // REAL YOUTUBE DATA: Using actual Video IDs for thumbnails
+        const videos = [
+            {
+                id: 1,
+                title: "Using Apple Vision Pro: What It’s Actually Like!",
+                channel: "Marques Brownlee",
+                views: "28m views",
+                time: "1 year ago",
+                category: "Technology",
+                thumbnail: "https://img.youtube.com/vi/dtp6b76pMak/mqdefault.jpg",
+                avatar: "https://yt3.googleusercontent.com/qu4TmIaYUlS41-dJ9gZ7DUR3nilvmB5_11i6OKSdvNnBNiyOusZP1bMN6ICnuxtjFBb6ioKgRQ=s800-c-k-c0x00ffffff-no-rj",
+                score: "98%",
+                reason: "History: You watched 'Neural Networks Explained'",
+                booster: "Trending: High engagement in your region",
+                diversity: "Low: Reinforces existing tech interest"
+            },
+            {
+                id: 2,
+                title: "I Quit Social Media For 30 Days",
+                channel: "Matt D'Avella",
+                views: "6.3m views",
+                time: "7 years ago",
+                category: "Lifestyle",
+                thumbnail: "https://img.youtube.com/vi/9z8_YhWoq2o/maxresdefault.jpg",
+                avatar: "https://yt3.googleusercontent.com/9tZhUHaqI9ynPOstWuYVrzbp1wAfLE71TIzws5Fccs0u8a-obZz6WTiocIpFmmp0_O2xGjRteI8=s800-c-k-c0x00ffffff-no-rj",
+                score: "85%",
+                reason: "Lookalike: Similar to 'Minimalism' videos you liked",
+                booster: "Retention: High watch-time from similar users",
+                diversity: "Medium: Lifestyle content"
+            },
+            {
+                id: 3,
+                title: "Elden Ring Review",
+                channel: "IGN",
+                views: "5.6m views",
+                time: "3 years ago",
+                category: "Gaming",
+                thumbnail: "https://img.youtube.com/vi/0uav6zQKiMQ/sddefault.jpg",
+                avatar: "https://yt3.googleusercontent.com/0r31CrZzRiYSl-_Zpg14rDNp0lSkHJnKKS7Jmj6sPZtUOFRpulRg1zqO-VYmRDNUSxBEgAeUzw=s800-c-k-c0x00ffffff-no-rj",
+                score: "92%",
+                reason: "Subscription: You are subscribed to IGN",
+                booster: "New Upload: Boosted for first 24h",
+                diversity: "Low: Core interest match"
+            },
+            {
+                id: 4,
+                title: "The Rules for Rulers",
+                channel: "CGP Grey",
+                views: "23m views",
+                time: "9 years ago",
+                category: "Politics",
+                thumbnail: "https://img.youtube.com/vi/rStL7niR7gs/maxresdefault.jpg",
+                avatar: "https://yt3.googleusercontent.com/ytc/AIdro_nxrDGcxMGo8yKf2_Dw0eaGEWj39IAIdZQjAuz-_mBHjUI=s800-c-k-c0x00ffffff-no-rj",
+                score: "65%",
+                reason: "Diversity Inject: To break potential filter bubble",
+                booster: "Civic Information: Platform quality boost",
+                diversity: "High: Challenges your usual entertainment bias",
+                isDiversity: true
+            },
+            {
+                id: 5,
+                title: "React in 100 Seconds",
+                channel: "Fireship",
+                views: "1.6m views",
+                time: "5 years ago",
+                category: "Technology",
+                thumbnail: "https://img.youtube.com/vi/Tn6-PIqc4UM/maxresdefault.jpg",
+                avatar: "https://yt3.googleusercontent.com/ytc/AIdro_mKzklyPPhghBJQH5H3HpZ108YcE618DBRLAvRUD1AjKNw=s800-c-k-c0x00ffffff-no-rj",
+                score: "95%",
+                reason: "Search: You searched for 'React JS' yesterday",
+                booster: "Evergreen: Consistently high CTR",
+                diversity: "Low: Direct intent match"
+            },
+            {
+                id: 6,
+                title: "30 Minute HIIT Cardio Workout + Abs At Home - With Warmup | SELF",
+                channel: "SELF",
+                views: "13m views",
+                time: "7 years ago",
+                category: "Lifestyle",
+                thumbnail: "https://img.youtube.com/vi/bdCX8Nb_2Mg/maxresdefault.jpg",
+                avatar: "https://yt3.googleusercontent.com/ytc/AIdro_l6an-yyV8vKqXuL8GFQLYYXWPrQm32dK28xrV4sg_vTjaW=s800-c-k-c0x00ffffff-no-rj",
+                score: "72%",
+                reason: "Morning Routine: Popular at this time of day (7:00 AM)",
+                booster: "Session Start: Good for initiating watch sessions",
+                diversity: "Medium: New category exploration"
+            },
+            {
+                id: 7,
+                title: "The Man Who Accidentally Killed The Most People",
+                channel: "Veritasium",
+                views: "41m views",
+                time: "3 years ago",
+                category: "Technology",
+                thumbnail: "https://img.youtube.com/vi/IV3dnLzthDA/mqdefault.jpg",
+                avatar: "https://yt3.googleusercontent.com/7vCbvtCqtjQ3YLgsJt7Y952MQV1sBvhllSCSxHP8_sVZdcPCBrITfhkN2RdyCuwPnsByq-1GoA=s800-c-k-c0x00ffffff-no-rj",
+                score: "88%",
+                reason: "Co-watch: Viewers of 'MKBHD' also watch this",
+                booster: "Educational Value: Boosted by learning algorithm",
+                diversity: "Medium: Academic content"
+            },
+            {
+                id: 8,
+                title: "$1 vs $1,000,000 Hotel Room!",
+                channel: "MrBeast",
+                views: "418m views",
+                time: "3 years ago",
+                category: "Entertainment",
+                thumbnail: "https://img.youtube.com/vi/iogcY_4xGjo/maxresdefault.jpg",
+                avatar: "https://yt3.googleusercontent.com/nxYrc_1_2f77DoBadyxMTmv7ZpRZapHR5jbuYe7PlPd5cIRJxtNNEYyOC0ZsxaDyJJzXrnJiuDE=s800-c-k-c0x00ffffff-no-rj",
+                score: "99%",
+                reason: "Dopamine: High predicted click-through rate",
+                booster: "Viral: Rapid view velocity",
+                diversity: "Low: Pure entertainment",
+                warning: "Rabbit Hole Potential"
+            }
+        ];
+
+        // DOM Elements
+        const grid = document.getElementById('video-grid');
+        const toggle = document.getElementById('transparency-toggle');
+        const banner = document.getElementById('mode-banner');
+
+        // STATE
+        let isTransparent = false;
+        let activeCategory = 'All';
+
+        // FUNCTIONS
+
+        function filterVideos(category) {
+            activeCategory = category;
+            updateFilterButtons();
+
+            let filteredVideos;
+
+            if (category === 'All') {
+                filteredVideos = videos;
+            } else if (category === 'Recently Uploaded') {
+                // Filter logic for "Recently Uploaded": check if time string contains "hour" or "day" 
+                filteredVideos = videos.filter(v => v.time.includes('hour') || v.time.includes('day'));
+            } else {
+                filteredVideos = videos.filter(v => v.category === category);
+            }
+
+            renderVideos(filteredVideos);
+        }
+
+        function updateFilterButtons() {
+            const buttons = document.querySelectorAll('.category-btn');
+            buttons.forEach(btn => {
+                const category = btn.getAttribute('data-category');
+                if (category === activeCategory) {
+                    btn.classList.remove('bg-[#272727]', 'text-white');
+                    btn.classList.add('bg-white', 'text-black');
+                } else {
+                    btn.classList.add('bg-[#272727]', 'text-white');
+                    btn.classList.remove('bg-white', 'text-black');
+                }
+            });
+        }
+
+        function renderVideos(videoList = videos) {
+            grid.innerHTML = '';
+
+            if (videoList.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center text-gray-500 py-20">No videos found in this category.</div>`;
+                return;
+            }
+
+            videoList.forEach(video => {
+                // Create Card Container
+                const card = document.createElement('div');
+                card.className = "flex flex-col gap-2 group cursor-pointer";
+
+                // Conditional Border for Diversity/Important Items in Transparent Mode
+                const borderClass = (isTransparent && video.isDiversity)
+                    ? "border-2 border-blue-500 rounded-xl p-1"
+                    : (isTransparent && video.warning)
+                        ? "border-2 border-red-500 rounded-xl p-1"
+                        : "border border-transparent rounded-xl";
+
+                card.className += ` ${borderClass}`;
+
+                // HTML Structure
+                card.innerHTML = `
+                    <!-- Thumbnail Container -->
+                    <div class="relative rounded-xl overflow-hidden aspect-video">
+                        <img src="${video.thumbnail}" alt="${video.title}" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-200">
+                        <div class="absolute bottom-1 right-1 bg-black/80 px-1 rounded text-xs font-bold">12:45</div>
+                        
+                        <!-- OVERLAY: The "Glass Box" Logic (Hidden by default) -->
+                        <div class="absolute inset-0 bg-black/90 p-4 flex flex-col justify-center gap-2 explanation-panel ${isTransparent ? 'opacity-100 visible' : 'opacity-0 invisible'}">
+                            <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                                <span class="text-xs uppercase tracking-wider text-gray-400">Match Score</span>
+                                <span class="text-xl font-bold ${getScoreColor(video.score)}">${video.score}</span>
+                            </div>
+                            
+                            <div class="space-y-2 mt-1">
+                                <div class="text-xs">
+                                    <span class="text-blue-400 font-bold">Why?</span>
+                                    <p class="text-gray-300 leading-tight">${video.reason}</p>
+                                </div>
+                                <div class="text-xs">
+                                    <span class="text-green-400 font-bold">Booster</span>
+                                    <p class="text-gray-300 leading-tight">${video.booster}</p>
+                                </div>
+                                <div class="text-xs">
+                                    <span class="text-purple-400 font-bold">Diversity</span>
+                                    <p class="text-gray-300 leading-tight">${video.diversity}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Meta Data -->
+                    <div class="flex gap-3 mt-1 px-1">
+                        <img src="${video.avatar}" class="w-9 h-9 rounded-full mt-1 bg-gray-700">
+                        <div class="flex flex-col">
+                            <h3 class="text-white font-semibold text-base leading-tight line-clamp-2 group-hover:text-blue-400 transition-colors">${video.title}</h3>
+                            <div class="text-gray-400 text-sm mt-1">
+                                <div class="hover:text-white transition-colors">${video.channel} <i class="ph-fill ph-check-circle text-gray-500 text-xs align-middle"></i></div>
+                                <div>${video.views} • ${video.time}</div>
+                            </div>
+                            
+                            <!-- XAI Tag in Meta (Visible only in Transparent Mode) -->
+                            <div class="mt-2 ${isTransparent ? 'block' : 'hidden'}">
+                                ${getBadge(video)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Helper: Score Color
+        function getScoreColor(score) {
+            const val = parseInt(score);
+            if (val >= 90) return "text-green-500";
+            if (val >= 70) return "text-yellow-500";
+            return "text-red-500";
+        }
+
+        // Helper: Bottom Badges
+        function getBadge(video) {
+            if (video.isDiversity) return `<span class="bg-blue-900/50 text-blue-300 text-[10px] px-2 py-0.5 rounded border border-blue-800">Usefulness: Broaden Horizon</span>`;
+            if (video.warning) return `<span class="bg-red-900/50 text-red-300 text-[10px] px-2 py-0.5 rounded border border-red-800">Risk: High Addictiveness</span>`;
+            return `<span class="bg-gray-800 text-gray-400 text-[10px] px-2 py-0.5 rounded border border-gray-700">Logic: Engagement Optimization</span>`;
+        }
+
+        // EVENT LISTENER
+        toggle.addEventListener('change', (e) => {
+            isTransparent = e.target.checked;
+
+            // Toggle Banner
+            if (isTransparent) {
+                banner.classList.remove('hidden');
+                setTimeout(() => banner.classList.remove('opacity-0'), 10);
+            } else {
+                banner.classList.add('hidden');
+                banner.classList.add('opacity-0');
+            }
+
+            // Re-render grid with current active filter
+            filterVideos(activeCategory);
+        });
+
+        // Initial Render
+        filterVideos('All');
+
+    </script>
+</body>
+
+</html>
