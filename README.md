@@ -1,7 +1,7 @@
 # TubeTrust: The Transparency Prototype
 
 **Group:** Hive  
-**Course:** CS412 - Adaptive Systems  
+**Course:** CS412 - User Modeling  
 
 ## Overview
 This Proof-of-Concept (PoC) demonstrates our thesis: that algorithmic transparency is an ethical imperative for adaptive systems. The prototype mimics a video feed with two modes:
