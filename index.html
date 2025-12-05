@@ -31,7 +31,8 @@
 
         /* Toggle Switch Animation */
         .toggle-checkbox:checked {
-            right: 0;
+            /* Removed 'right: 0' to prevent overshooting. 
+               The translate-x-full class handles the movement. */
             border-color: #3b82f6;
         }
 
